@@ -1,3 +1,4 @@
+require('dotenv').load()
 var express = require('express')
 var path = require('path')
 var favicon = require('serve-favicon')
@@ -21,16 +22,17 @@ app.set('view engine', 'hbs')
 // app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')))
 app.use(logger('dev'))
 app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({extended: false}))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
+app.use(passport.initialize())
 
 passport.use(new LinkedInStrategy({
-  clientID: '78jd6evev568a9',
-  clientSecret: 'NZf6pbXxw5qTxGFu',
-  callbackURL: "http://127.0.0.1:3000/auth/linkedin/callback",
+  clientID: process.env.LINKEDIN_CLIENT_ID,
+  clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+  callbackURL: "http://localhost:3000/auth/linkedin/callback",
   scope: ['r_emailaddress', 'r_basicprofile'],
-}, function(accessToken, refreshToken, profile, done) {
+}, function (accessToken, refreshToken, profile, done) {
   // asynchronous verification, for effect...
   process.nextTick(function () {
     // To keep the example simple, the user's LinkedIn profile is returned to
@@ -42,11 +44,24 @@ passport.use(new LinkedInStrategy({
 }))
 
 app.get('/auth/linkedin',
-  passport.authenticate('linkedin', { state: 'SOME STATE'  }),
-  function(req, res){
+  passport.authenticate('linkedin', {state: 'SOME STATE'}),
+  function (req, res) {
     // The request will be redirected to LinkedIn for authentication, so this
     // function will not be called.
   })
+app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
+  successRedirect: '/',
+  failureRedirect: '/login'
+}))
+
+// above app.use('/', routes);...
+passport.serializeUser(function (user, done) {
+  done(null, user);
+})
+
+passport.deserializeUser(function (user, done) {
+  done(null, user)
+})
 
 app.use('/', routes)
 app.use('/users', users)
