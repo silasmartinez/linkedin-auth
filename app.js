@@ -5,7 +5,7 @@ var favicon = require('serve-favicon')
 var logger = require('morgan')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
-
+var session = require('express-session')
 var passport = require('passport')
 var LinkedInStrategy = require('passport-linkedin-oauth2').Strategy
 
@@ -25,7 +25,14 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
-app.use(passport.initialize())
+
+app.use(session({ secret: process.env.COOKIE_SECRET,
+  saveUninitialized: true,
+  resave: true}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+
 
 
 passport.use(new LinkedInStrategy({
@@ -33,6 +40,7 @@ passport.use(new LinkedInStrategy({
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: process.env.HOST + "/auth/linkedin/callback",
   scope: ['r_emailaddress', 'r_basicprofile'],
+  state: true
 }, function (accessToken, refreshToken, profile, done) {
   // asynchronous verification, for effect...
   process.nextTick(function () {
@@ -44,8 +52,13 @@ passport.use(new LinkedInStrategy({
   })
 }))
 
+app.get('/logout', function (req, res, next) {
+  req.session.destroy()
+  res.redirect('/')
+})
+
 app.get('/auth/linkedin',
-  passport.authenticate('linkedin', {state: 'SOME STATE'}),
+  passport.authenticate('linkedin'),
   function (req, res) {
     // The request will be redirected to LinkedIn for authentication, so this
     // function will not be called.
