@@ -27,10 +27,6 @@ app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(passport.initialize())
 
-app.use(function (req, res, next) {
-  console.log(process.env.HOST)
-  next()
-})
 
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
